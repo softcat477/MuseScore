@@ -3519,7 +3519,10 @@ void NotationInteraction::copySelection()
             #else
             QClipboard::Mode mode = QClipboard::Selection;
             #endif
-            QGuiApplication::clipboard()->setText(ted->selectedText, mode);
+            QMimeData* mimeData = new QMimeData();
+            mimeData->setData(TextEditData::mimeRichTextFormat, ted->selectedText.toQString().toUtf8());
+            mimeData->setText(ted->selectedPlainText);
+            QGuiApplication::clipboard()->setMimeData(mimeData, mode);
         }
     } else {
         QMimeData* mimeData = selection()->mimeData();
@@ -3597,8 +3600,11 @@ void NotationInteraction::pasteSelection(const Fraction& scale)
         #else
         QClipboard::Mode mode = QClipboard::Selection;
         #endif
-        QString txt = QGuiApplication::clipboard()->text(mode);
-        toTextBase(m_editData.element)->paste(m_editData, txt);
+        const QMimeData *mimeData = QApplication::clipboard()->mimeData();
+        if (mimeData->hasFormat(TextEditData::mimeRichTextFormat)) {
+          const QString txt = QString::fromUtf8(mimeData->data(TextEditData::mimeRichTextFormat));
+          toTextBase(m_editData.element)->paste(m_editData, txt);
+        }
     } else {
         const QMimeData* mimeData = QApplication::clipboard()->mimeData();
         QMimeDataAdapter ma(mimeData);
